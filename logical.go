@@ -23,30 +23,78 @@ var actionLiterals = map[string]Action{
 }
 
 type (
+	// An EndpointDef is a go struct form of the JSON encoded Endpoint definition
+	// An endpoint has a name, a path (which may be relative if the endpoint is a
+	// subpoint), middleware and services defined for each HTTP Actions, and
+	// subpoints (which are endpoint definitions with paths rooted with this
+	// endpoint's path
+	// i.e.,
+	//		{
+	//			"name": "groups",
+	//			"path": "/groups",
+	//			"actions": ["GET"],
+	//			"middleware": {
+	//				"GET": ["log", "user-auth"],
+	//			},
+	//			"services": {
+	//				"GET": ["db", "response"],
+	//			}
+	//		}
 	EndpointDef struct {
-		Name, Path, Auth  string
-		Actions, Requires []string
-		Endpoints         []*EndpointDef
+		Name, Path           string
+		Actions              []string
+		Middleware, Services map[string][]string
+		Subpoints            []*EndpointDef
 	}
 
+	// A HostDef is the rooted JSON encoded definition of an aeolus.Host.
+	// It has a name, a host (for listening on), and a port. It also must
+	// specify officially recognized middleware and services. It has a list
+	// of endpoints which may be defined heirarchically using subpoints.
+	// i.e.,
+	//		{
+	//			"name": "api",
+	//			"host": "localhost",
+	//			"port": 8000,
+	//			"middleware": ["log", "user-auth"],
+	//			"services": ["db", "response"],
+	//			"endpoints": [
+	//				{ ... },
+	//				{ ... }
+	//			]
+	//		}
 	HostDef struct {
-		Name, Host string
-		Endpoints  []*EndpointDef
+		Name, Host           string
+		Port                 int
+		Middleware, Services []string
+		Endpoints            []*EndpointDef
 	}
 
+	// An Endpoint is the logical construct representing a API route handler.
+	// An enpoint must have a name and path defined. The Actions are which
+	// actions it accepts (which may be none) and Middleware and Services
+	// are the corresponding requirements for each of those actions.
 	Endpoint struct {
-		Name, Path, Auth string
-		Actions          []Action
-		Requires         map[string]bool
+		Name, Path           string
+		Actions              map[Action]bool
+		Middleware, Services map[Action]map[string]bool
 	}
 
+	// A Host is the logical construct represent and collection of endpoints,
+	// often thought of a single server, host, api, or application.
+	// A host must have a name, a serving host, a port and optionally
+	// explicitly recognied middleware and services. Any middleware/services
+	// not explicity recognized will be considered invalid if referred to in
+	// any endpoint of the host.
 	Host struct {
-		Name, Host string
-		Endpoints  map[string]*Endpoint
+		Name, Host           string
+		Port                 uint
+		Middleware, Services map[string]bool
+		Endpoints            map[string]*Endpoint
 	}
 )
 
-func (ed *EndpointDef) Valid() error {
+func (ed *EndpointDef) Valid(h *HostDef) error {
 	if ed.Name == "" {
 		return errors.New("Endpoint must have a name")
 	}
@@ -59,8 +107,38 @@ func (ed *EndpointDef) Valid() error {
 		return fmt.Errorf("Endpoint %s must have a path that starts with a /", ed.Name)
 	}
 
-	for _, e := range ed.Endpoints {
-		if err := e.Valid(); err != nil {
+	for _, a := range ed.Actions {
+		if _, ok := actionLiterals[a]; !ok {
+			return fmt.Errorf("Endpoint %s has invalid HTTP Action: %s", ed.Name, a)
+		}
+	}
+
+	for a, values := range ed.Middleware {
+		if _, ok := actionLiterals[a]; !ok {
+			return fmt.Errorf("Endpoint %s has invalid HTTP Action: %s, defined in middleware", ed.Name, a)
+		}
+
+		for _, v := range values {
+			if !includes(h.Middleware, v) {
+				return fmt.Errorf("Endpoint %s has invalid middleware %s", ed.Name, v)
+			}
+		}
+	}
+
+	for a, values := range ed.Services {
+		if _, ok := actionLiterals[a]; !ok {
+			return fmt.Errorf("Endpoint %s has invalid HTTP Action: %s, defined in services", ed.Name, a)
+		}
+
+		for _, v := range values {
+			if !includes(h.Services, v) {
+				return fmt.Errorf("Endpoint %s has invalid service %s", ed.Name, v)
+			}
+		}
+	}
+
+	for _, e := range ed.Subpoints {
+		if err := e.Valid(h); err != nil {
 			return err
 		}
 	}
@@ -68,12 +146,22 @@ func (ed *EndpointDef) Valid() error {
 	return nil
 }
 
+func includes(ss []string, s string) bool {
+	for i := range ss {
+		if s == ss[i] {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (ed *EndpointDef) Process(namespace string, path string, auth string) []*Endpoint {
 	endpoints := make([]*Endpoint, 1)
 
-	actions := make([]Action, len(ed.Actions))
-	for i, a := range ed.Actions {
-		actions[i] = actionLiterals[a]
+	actions := make(map[Action]bool)
+	for _, a := range ed.Actions {
+		actions[actionLiterals[a]] = true
 	}
 
 	path = filepath.Join(path, ed.Path)
@@ -84,26 +172,31 @@ func (ed *EndpointDef) Process(namespace string, path string, auth string) []*En
 		name = ed.Name
 	}
 
-	rs := make(map[string]bool)
-	for _, a := range ed.Requires {
-		rs[a] = true
+	m := make(map[Action]map[string]bool)
+	for aString, middleware := range ed.Middleware {
+		action := actionLiterals[aString]
+		m[action] = make(map[string]bool)
+		for i := range middleware {
+			m[action][middleware[i]] = true
+		}
 	}
 
-	if ed.Auth == "" {
-		if auth == "" {
-			auth = "none"
+	s := make(map[Action]map[string]bool)
+	for aString, services := range ed.Services {
+		action := actionLiterals[aString]
+		s[action] = make(map[string]bool)
+		for i := range services {
+			s[action][services[i]] = true
 		}
-	} else {
-		auth = ed.Auth
 	}
 
 	endpoints[0] = &Endpoint{
-		Name: name, Path: path, Auth: auth,
-		Actions:  actions,
-		Requires: rs,
+		Name: name, Path: path,
+		Actions:    actions,
+		Middleware: m, Services: s,
 	}
 
-	for _, e := range ed.Endpoints {
+	for _, e := range ed.Subpoints {
 		subpoints := e.Process(name, path, auth)
 		for _, s := range subpoints {
 			endpoints = append(endpoints, s)
@@ -122,8 +215,32 @@ func (hd *HostDef) Valid() error {
 		return fmt.Errorf("Host %s must have a host", hd.Name)
 	}
 
+	if hd.Port == 0 {
+		return fmt.Errorf("Host %s must have port (0 is invalid)", hd.Name)
+	}
+
+	if hd.Port < 0 {
+		return fmt.Errorf("Host %s must have positive port", hd.Name)
+	}
+
+	if hd.Port > 65535 {
+		return fmt.Errorf("Host %s must have port less that 65535", hd.Name)
+	}
+
+	for _, m := range hd.Middleware {
+		if m == "" {
+			return fmt.Errorf("Host %s has invalid middleware: \"\"", hd.Name)
+		}
+	}
+
+	for _, s := range hd.Services {
+		if s == "" {
+			return fmt.Errorf("Host %s has invalid service: \"\"", hd.Name)
+		}
+	}
+
 	for _, e := range hd.Endpoints {
-		if err := e.Valid(); err != nil {
+		if err := e.Valid(hd); err != nil {
 			return err
 		}
 	}
@@ -144,6 +261,7 @@ func (hd *HostDef) Process() *Host {
 	return &Host{
 		Name:      hd.Name,
 		Host:      hd.Host,
+		Port:      uint(hd.Port),
 		Endpoints: endpoints,
 	}
 }
