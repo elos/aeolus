@@ -1,8 +1,10 @@
-To install the aeolus command
+To install the aeolus command:
 
-    `go install aeolus.go`
+```bash
+    $ go install aeolus.go
+```
 
-You must have your GOBIN configured.
+You must have your $GOBIN configured.
 
 You can also:
 
