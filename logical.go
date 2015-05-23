@@ -92,7 +92,7 @@ type (
 		Port                 uint
 		Middleware, Services map[string]bool
 		Routes               map[string]string
-		Endpoints            map[string]*Endpoint
+		Endpoints            []*Endpoint
 		Static               map[string]string
 	}
 )
@@ -176,12 +176,12 @@ func (ed *EndpointDef) Process(namespace string, path string) []*Endpoint {
 		m := make([]string, len(ed.Middleware[aString]))
 		s := make([]string, len(ed.Services[aString]))
 
-		for i, middleware := range ed.Middleware[aString] {
-			m[i] = ProcessName(middleware)
+		for j, middleware := range ed.Middleware[aString] {
+			m[j] = ProcessName(middleware)
 		}
 
-		for i, service := range ed.Services[aString] {
-			s[i] = ProcessName(service)
+		for j, service := range ed.Services[aString] {
+			s[j] = ProcessName(service)
 		}
 
 		endpoints[i] = &Endpoint{
@@ -244,13 +244,13 @@ func (hd *HostDef) Valid() error {
 }
 
 func (hd *HostDef) Process() *Host {
-	endpoints := make(map[string]*Endpoint, 0)
+	endpoints := make([]*Endpoint, 0)
 	routes := make(map[string]string)
 
 	for _, e := range hd.Endpoints {
 		subpoints := e.Process("", "")
 		for _, s := range subpoints {
-			endpoints[s.Name+string(s.Action)] = s
+			endpoints = append(endpoints, s)
 			routes[s.Name] = s.Path
 		}
 	}

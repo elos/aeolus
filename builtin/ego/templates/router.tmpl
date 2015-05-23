@@ -16,24 +16,22 @@ func init() {
 func router(m *Middleware, s *Services) serve.Router {
     router := builtin.NewRouter()
 
-    {{range $key, $endpoint := .Endpoints}}
-            {{with $action := $endpoint.Action}}
-            router.{{action $action}}(routes.{{name $endpoint.Name}}, func(c *serve.Conn) {
-                {{range $index, $middleware := $endpoint.Middleware}}
-                if ok := m.{{name $middleware}}.Inbound(c); !ok {
-                    return
-                }
-                {{end}}
-
-                routes.{{name $endpoint.Name}}{{name (action $action)}}({{argsFor $endpoint}})
-
-                {{range $index, $middleware := $endpoint.Middleware}}
-                if ok := m.{{name $middleware}}.Outbound(c); !ok {
-                    return
-                }
-                {{end}}
-            })
+    {{range $index, $endpoint := .Endpoints}}
+        router.{{action $endpoint.Action}}(routes.{{name $endpoint.Name}}, func(c *serve.Conn) {
+            {{range $index, $middleware := $endpoint.Middleware}}
+            if ok := m.{{name $middleware}}.Inbound(c); !ok {
+                return
+            }
             {{end}}
+
+            routes.{{name $endpoint.Name}}{{name (action $endpoint.Action)}}({{argsFor $endpoint}})
+
+            {{range $index, $middleware := $endpoint.Middleware}}
+            if ok := m.{{name $middleware}}.Outbound(c); !ok {
+                return
+            }
+            {{end}}
+        })
     {{end}}
 
     {{range $staticServe, $staticDir := .Static}}
