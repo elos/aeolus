@@ -116,7 +116,7 @@ func userAuth(e *aeolus.Endpoint) bool {
 }
 
 func staticPath(path string) string {
-	return filepath.Join(path, "*filepath")
+	return filepath.Join("/", path, "*filepath")
 }
 
 func downcase(s string) string {

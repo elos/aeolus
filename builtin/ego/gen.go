@@ -57,12 +57,8 @@ func ExecuteAndWrite(n templates.Name, file string, h *aeolus.Host) error {
 		return fmt.Errorf("error writing file: %s", err)
 	}
 
-	if err := exec.Command("gofmt", "-w=true", file); err != nil {
-		fmt.Errorf("error running gofmt  on file: %s", err)
-	}
-
-	if err := exec.Command("goimports", "-w=true", file); err != nil {
-		fmt.Errorf("error running goimports on file: %s", err)
+	if err := exec.Command("goimports", "-w=true", file).Run(); err != nil {
+		return fmt.Errorf("error running goimports on file: %s", err)
 	}
 
 	log.Printf("wrote %s", file)

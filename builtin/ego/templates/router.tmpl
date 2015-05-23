@@ -1,10 +1,17 @@
 {{define "ROOT"}}
-package app
+package {{downcase .Name}}
 
 import (
     "github.com/elos/ehttp/builtin"
     "github.com/elos/app/routes"
 )
+
+var root string
+
+func init() {
+    _, filename, _, _ := runtime.Caller(1)
+    root = filepath.Dir(filename)
+}
 
 func router({{range $service, $_ := .Services}} {{$service}} services.{{name $service}}, {{end}}) serve.Router {
     router := builtin.NewRouter()
@@ -25,7 +32,7 @@ func router({{range $service, $_ := .Services}} {{$service}} services.{{name $se
     {{end}}
 
     {{range $staticServe, $staticDir := .Static}}
-    router.ServeFiles("{{staticPath $staticServe}}", http.Dir("{{$staticDir}}"))
+    router.ServeFiles("{{staticPath $staticServe}}", http.Dir(filepath.Join(root, "{{$staticDir}}")))
     {{end}}
 
     return router
