@@ -1,0 +1,32 @@
+{{define "ROOT"}}
+package views
+
+import (
+        "github.com/elos/ehttp/templates"
+       )
+
+type RoutesContext struct {
+}
+
+{{range $endpoint := .Endpoints }}
+   {{interpolatorFor $endpoint}}
+{{end}}
+
+var routesContext = &RoutesContext{}
+
+type context struct {
+    Routes *RoutesContext
+    Data interface{}
+}
+
+func (c *context) WithData(d interface{}) templates.Context {
+    return &context{
+        Routes: c.Routes,
+        Data: d,
+    }
+}
+
+var globalContext = &context{
+    Routes: routesContext,
+}
+{{end}}

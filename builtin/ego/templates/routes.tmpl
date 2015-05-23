@@ -1,0 +1,10 @@
+{{define "ROOT"}}
+package routes
+
+const (
+{{range $key, $endpoint := .Endpoints }}
+    {{name $endpoint.Name}} = "{{$endpoint.Path}}"
+{{end}}
+)
+
+{{end}}

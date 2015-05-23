@@ -1,0 +1,26 @@
+{{define "ROOT"}}
+package {{downcase .Name}}
+
+type {{name .Name}} struct {
+    router   serve.Router
+    {{range $service, $_ := .Services}}
+        {{$service}} services.{{name $service}}
+    {{end}}
+}
+
+func New({{range $service, $e := .Services}} {{$service}} services.{{name $service}}, {{end}}) *{{name .Name}} {
+    router :=  router({{range $service, $e := .Services}} {{$service}}, {{end}})
+
+  return &{{name .Name}}{
+    router:   router,
+    {{range $service, $_ := .Services}}
+    {{$service}}: {{$service}},
+    {{end}}
+  }
+}
+
+func ({{downcase .Name}} *{{name .Name}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    context.ClearHandler(http.HandlerFunc(app.router.ServeHTTP)).ServeHTTP(w, r)
+}
+
+{{end}}
