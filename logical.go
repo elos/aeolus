@@ -68,6 +68,7 @@ type (
 		Port                 int
 		Middleware, Services []string
 		Endpoints            []*EndpointDef
+		Static               map[string]string
 	}
 
 	// An Endpoint is the logical construct representing a API route handler.
@@ -76,8 +77,8 @@ type (
 	// are the corresponding requirements for each of those actions.
 	Endpoint struct {
 		Name, Path           string
-		Actions              map[Action]bool
-		Middleware, Services map[Action]map[string]bool
+		Action               Action
+		Middleware, Services map[string]bool
 	}
 
 	// A Host is the logical construct represent and collection of endpoints,
@@ -91,6 +92,7 @@ type (
 		Port                 uint
 		Middleware, Services map[string]bool
 		Endpoints            map[string]*Endpoint
+		Static               map[string]string
 	}
 )
 
@@ -156,48 +158,39 @@ func includes(ss []string, s string) bool {
 	return false
 }
 
-func (ed *EndpointDef) Process(namespace string, path string, auth string) []*Endpoint {
-	endpoints := make([]*Endpoint, 1)
+func (ed *EndpointDef) Process(namespace string, path string) []*Endpoint {
+	endpoints := make([]*Endpoint, len(ed.Actions))
 
-	actions := make(map[Action]bool)
-	for _, a := range ed.Actions {
-		actions[actionLiterals[a]] = true
-	}
-
-	path = filepath.Join(path, ed.Path)
 	var name string
+	path = filepath.Join(path, ed.Path)
 	if namespace != "" {
 		name = namespace + "_" + ed.Name
 	} else {
 		name = ed.Name
 	}
 
-	m := make(map[Action]map[string]bool)
-	for aString, middleware := range ed.Middleware {
+	for i, aString := range ed.Actions {
 		action := actionLiterals[aString]
-		m[action] = make(map[string]bool)
-		for i := range middleware {
-			m[action][middleware[i]] = true
-		}
-	}
 
-	s := make(map[Action]map[string]bool)
-	for aString, services := range ed.Services {
-		action := actionLiterals[aString]
-		s[action] = make(map[string]bool)
-		for i := range services {
-			s[action][services[i]] = true
+		m := make(map[string]bool)
+		for _, middleware := range ed.Middleware[aString] {
+			m[middleware] = true
 		}
-	}
 
-	endpoints[0] = &Endpoint{
-		Name: name, Path: path,
-		Actions:    actions,
-		Middleware: m, Services: s,
+		s := make(map[string]bool)
+		for _, service := range ed.Services[aString] {
+			s[service] = true
+		}
+
+		endpoints[i] = &Endpoint{
+			Name: name, Path: path,
+			Action:     action,
+			Middleware: m, Services: s,
+		}
 	}
 
 	for _, e := range ed.Subpoints {
-		subpoints := e.Process(name, path, auth)
+		subpoints := e.Process(name, path)
 		for _, s := range subpoints {
 			endpoints = append(endpoints, s)
 		}
@@ -252,16 +245,29 @@ func (hd *HostDef) Process() *Host {
 	endpoints := make(map[string]*Endpoint, 0)
 
 	for _, e := range hd.Endpoints {
-		subpoints := e.Process("", "", "")
+		subpoints := e.Process("", "")
 		for _, s := range subpoints {
 			endpoints[s.Name] = s
 		}
 	}
 
+	m := make(map[string]bool)
+	for _, middleware := range hd.Middleware {
+		m[middleware] = true
+	}
+
+	s := make(map[string]bool)
+	for _, service := range hd.Services {
+		s[service] = true
+	}
+
 	return &Host{
-		Name:      hd.Name,
-		Host:      hd.Host,
-		Port:      uint(hd.Port),
-		Endpoints: endpoints,
+		Name:       hd.Name,
+		Host:       hd.Host,
+		Port:       uint(hd.Port),
+		Middleware: m,
+		Services:   s,
+		Endpoints:  endpoints,
+		Static:     hd.Static,
 	}
 }
