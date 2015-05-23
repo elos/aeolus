@@ -30,7 +30,7 @@ func New(m *Middleware, s *Services) *{{name .Name}} {
 }
 
 func ({{downcase .Name}} *{{name .Name}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    context.ClearHandler(http.HandlerFunc(app.router.ServeHTTP)).ServeHTTP(w, r)
+    context.ClearHandler(http.HandlerFunc({{downcase .Name}}.router.ServeHTTP)).ServeHTTP(w, r)
 }
 
 {{end}}
