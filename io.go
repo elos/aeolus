@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"strings"
 )
 
 func ParseHostFile(path string) *Host {
@@ -23,4 +24,10 @@ func ParseHostFile(path string) *Host {
 	}
 
 	return hd.Process()
+}
+
+func ProcessName(s string) string {
+	s = strings.Replace(s, "-", "_", -1)
+	s = strings.Replace(s, " ", "_", -1)
+	return s
 }

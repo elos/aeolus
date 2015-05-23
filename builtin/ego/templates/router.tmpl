@@ -13,21 +13,26 @@ func init() {
     root = filepath.Dir(filename)
 }
 
-func router({{range $service, $_ := .Services}} {{$service}} services.{{name $service}}, {{end}}) serve.Router {
+func router(m *Middleware, s *Services) serve.Router {
     router := builtin.NewRouter()
-    userAuther := routes.NewUserAuthenticator(db, sessions)
 
     {{range $key, $endpoint := .Endpoints}}
             {{with $action := $endpoint.Action}}
-            {{if userAuth $endpoint}}
-            router.{{action $action}}(routes.{{name $endpoint.Name}}, routes.UserAuth(func(c *serve.Conn, u *models.User) {
-                    routes.{{name $endpoint.Name}}{{name (action $action)}}({{argsFor $endpoint}})
-                }, userAuther))
-            {{else}}
             router.{{action $action}}(routes.{{name $endpoint.Name}}, func(c *serve.Conn) {
-                    routes.{{name $endpoint.Name}}{{name (action $action)}}({{argsFor $endpoint}})
-                })
-            {{end}}
+                {{range $index, $middleware := $endpoint.Middleware}}
+                if ok := m.{{name $middleware}}.Inbound(c); !ok {
+                    return
+                }
+                {{end}}
+
+                routes.{{name $endpoint.Name}}{{name (action $action)}}({{argsFor $endpoint}})
+
+                {{range $index, $middleware := $endpoint.Middleware}}
+                if ok := m.{{name $middleware}}.Outbound(c); !ok {
+                    return
+                }
+                {{end}}
+            })
             {{end}}
     {{end}}
 

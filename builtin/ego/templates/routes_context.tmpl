@@ -8,8 +8,8 @@ import (
 type RoutesContext struct {
 }
 
-{{range $endpoint := .Endpoints }}
-   {{interpolatorFor $endpoint}}
+{{range $name, $path := .Routes }}
+   {{interpolatorFor $name $path}}
 {{end}}
 
 var routesContext = &RoutesContext{}

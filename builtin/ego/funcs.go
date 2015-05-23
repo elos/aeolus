@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/elos/aeolus"
@@ -51,9 +50,9 @@ func signatureFor(e *aeolus.Endpoint) string {
 	return buf.String()
 }
 
-func interpolatorFor(e *aeolus.Endpoint) string {
+func interpolatorFor(n, path string) string {
 	var buf bytes.Buffer
-	tokens := strings.Split(e.Path, "/")
+	tokens := strings.Split(path, "/")
 	args := make([]string, 0)
 	for i := range tokens {
 		if strings.Contains(tokens[i], ":") {
@@ -61,7 +60,7 @@ func interpolatorFor(e *aeolus.Endpoint) string {
 		}
 	}
 
-	fmt.Fprintf(&buf, "func (r *RoutesContext) %s(", name(e.Name))
+	fmt.Fprintf(&buf, "func (r *RoutesContext) %s(", name(n))
 	for i, arg := range args {
 		if i != 0 {
 			fmt.Fprint(&buf, " ,")
@@ -91,28 +90,15 @@ func interpolatorFor(e *aeolus.Endpoint) string {
 func argsFor(e *aeolus.Endpoint) string {
 	a := "c"
 
-	if userAuth(e) {
-		a += ", u"
-	}
-
-	s := make([]string, 0)
-
-	for service, _ := range e.Services {
-		s = append(s, service)
-	}
-
-	sort.Strings(s)
-
-	for _, service := range s {
-		a += ", " + service
+	for _, service := range e.Services {
+		a += ", s." + name(service)
 	}
 
 	return a
 }
 
 func userAuth(e *aeolus.Endpoint) bool {
-	_, ok := e.Middleware["user-auth"]
-	return ok
+	return includes(e.Services, "user-auth")
 }
 
 func staticPath(path string) string {
@@ -121,4 +107,13 @@ func staticPath(path string) string {
 
 func downcase(s string) string {
 	return strings.ToLower(s)
+}
+
+func includes(ss []string, s string) bool {
+	for i := range ss {
+		if ss[i] == s {
+			return true
+		}
+	}
+	return false
 }

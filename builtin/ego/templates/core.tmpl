@@ -1,21 +1,31 @@
 {{define "ROOT"}}
 package {{downcase .Name}}
 
-type {{name .Name}} struct {
-    router   serve.Router
-    {{range $service, $_ := .Services}}
-        {{$service}} services.{{name $service}}
+type Middleware struct{
+    {{range $middleware, $_ := .Middleware}}
+        {{name $middleware}} serve.Middleware
     {{end}}
 }
 
-func New({{range $service, $e := .Services}} {{$service}} services.{{name $service}}, {{end}}) *{{name .Name}} {
-    router :=  router({{range $service, $e := .Services}} {{$service}}, {{end}})
+type Services struct {
+    {{range $service, $_ := .Services}}
+        services.{{name $service}}
+    {{end}}
+}
+
+type {{name .Name}} struct {
+    router   serve.Router
+    *Middleware
+    *Services
+}
+
+func New(m *Middleware, s *Services) *{{name .Name}} {
+  router :=  router(m, s)
 
   return &{{name .Name}}{
     router:   router,
-    {{range $service, $_ := .Services}}
-    {{$service}}: {{$service}},
-    {{end}}
+    Middleware: m,
+    Services: s,
   }
 }
 

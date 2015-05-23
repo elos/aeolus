@@ -2,8 +2,8 @@
 package routes
 
 const (
-{{range $key, $endpoint := .Endpoints }}
-    {{name $endpoint.Name}} = "{{$endpoint.Path}}"
+{{range $name, $path := .Routes }}
+    {{name $name}} = "{{$path}}"
 {{end}}
 )
 

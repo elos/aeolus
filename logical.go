@@ -78,7 +78,7 @@ type (
 	Endpoint struct {
 		Name, Path           string
 		Action               Action
-		Middleware, Services map[string]bool
+		Middleware, Services []string
 	}
 
 	// A Host is the logical construct represent and collection of endpoints,
@@ -91,6 +91,7 @@ type (
 		Name, Host           string
 		Port                 uint
 		Middleware, Services map[string]bool
+		Routes               map[string]string
 		Endpoints            map[string]*Endpoint
 		Static               map[string]string
 	}
@@ -172,14 +173,15 @@ func (ed *EndpointDef) Process(namespace string, path string) []*Endpoint {
 	for i, aString := range ed.Actions {
 		action := actionLiterals[aString]
 
-		m := make(map[string]bool)
-		for _, middleware := range ed.Middleware[aString] {
-			m[middleware] = true
+		m := make([]string, len(ed.Middleware[aString]))
+		s := make([]string, len(ed.Services[aString]))
+
+		for i, middleware := range ed.Middleware[aString] {
+			m[i] = ProcessName(middleware)
 		}
 
-		s := make(map[string]bool)
-		for _, service := range ed.Services[aString] {
-			s[service] = true
+		for i, service := range ed.Services[aString] {
+			s[i] = ProcessName(service)
 		}
 
 		endpoints[i] = &Endpoint{
@@ -243,22 +245,24 @@ func (hd *HostDef) Valid() error {
 
 func (hd *HostDef) Process() *Host {
 	endpoints := make(map[string]*Endpoint, 0)
+	routes := make(map[string]string)
 
 	for _, e := range hd.Endpoints {
 		subpoints := e.Process("", "")
 		for _, s := range subpoints {
-			endpoints[s.Name] = s
+			endpoints[s.Name+string(s.Action)] = s
+			routes[s.Name] = s.Path
 		}
 	}
 
 	m := make(map[string]bool)
 	for _, middleware := range hd.Middleware {
-		m[middleware] = true
+		m[ProcessName(middleware)] = true
 	}
 
 	s := make(map[string]bool)
 	for _, service := range hd.Services {
-		s[service] = true
+		s[ProcessName(service)] = true
 	}
 
 	return &Host{
@@ -267,6 +271,7 @@ func (hd *HostDef) Process() *Host {
 		Port:       uint(hd.Port),
 		Middleware: m,
 		Services:   s,
+		Routes:     routes,
 		Endpoints:  endpoints,
 		Static:     hd.Static,
 	}
