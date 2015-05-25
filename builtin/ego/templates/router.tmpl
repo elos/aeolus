@@ -26,7 +26,7 @@ func router(m *Middleware, s *Services) serve.Router {
 
             routes.{{name $endpoint.Name}}{{name (action $endpoint.Action)}}({{argsFor $endpoint}})
 
-            {{range $index, $middleware := $endpoint.Middleware}}
+            {{range $index, $middleware := (reverse $endpoint.Middleware)}}
             if ok := m.{{name $middleware}}.Outbound(c); !ok {
                 return
             }

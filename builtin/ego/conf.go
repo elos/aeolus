@@ -46,6 +46,7 @@ var functionMap = template.FuncMap{
 	"interpolatorFor": interpolatorFor,
 	"staticPath":      staticPath,
 	"downcase":        downcase,
+	"reverse":         aeolus.Reverse,
 }
 
 var engine = templates.NewEngine(templatesPath, templateSet).WithFuncMap(functionMap)
