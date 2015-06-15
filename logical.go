@@ -162,8 +162,9 @@ func includes(ss []string, s string) bool {
 func (ed *EndpointDef) Process(namespace string, path string) []*Endpoint {
 	endpoints := make([]*Endpoint, len(ed.Actions))
 
-	var name string
 	path = filepath.Join(path, ed.Path)
+
+	var name string
 	if namespace != "" {
 		name = namespace + "_" + ed.Name
 	} else {
