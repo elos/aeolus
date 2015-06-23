@@ -25,9 +25,10 @@ const (
 
 // aelous.Actions to equivalent go syntax strings
 var actionsToLiterals = map[aeolus.Action]string{
-	aeolus.POST:   "POST",
-	aeolus.GET:    "GET",
-	aeolus.DELETE: "DELETE",
+	aeolus.POST:    "POST",
+	aeolus.GET:     "GET",
+	aeolus.DELETE:  "DELETE",
+	aeolus.OPTIONS: "OPTIONS",
 }
 
 var templateSet = &templates.TemplateSet{
