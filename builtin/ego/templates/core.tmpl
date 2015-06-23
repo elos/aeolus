@@ -22,6 +22,18 @@ type {{name .Name}} struct {
 func New(m *Middleware, s *Services) *{{name .Name}} {
   router :=  router(m, s)
 
+  {{range $middleware, $_ := .Middleware}}
+  if m.{{name $middleware}} == nil {
+      log.Fatal("Middleware {{name $middleware}} is nil")
+  }
+  {{end}}
+
+  {{range $service, $_ := .Services}}
+  if s.{{name $service}} == nil {
+      log.Fatal("Service {{name $service}} is nil")
+  }
+  {{end}}
+
   return &{{name .Name}}{
     router:   router,
     Middleware: m,
