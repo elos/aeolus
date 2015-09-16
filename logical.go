@@ -149,16 +149,6 @@ func (ed *EndpointDef) Valid(h *HostDef) error {
 	return nil
 }
 
-func includes(ss []string, s string) bool {
-	for i := range ss {
-		if s == ss[i] {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (ed *EndpointDef) Process(namespace string, path string) []*Endpoint {
 	endpoints := make([]*Endpoint, len(ed.Actions))
 
