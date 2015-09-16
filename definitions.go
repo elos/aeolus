@@ -7,7 +7,7 @@ import (
 )
 
 // The structures representing a parsed aeolus definition. For the actual
-// logical structures, see logical.go.
+// logical structures, see ./logical.go.
 type (
 	// An EndpointDef is a go struct form of the JSON encoded Endpoint definition
 	// An endpoint has a name, a path (which may be relative if the endpoint is a
@@ -134,8 +134,9 @@ func (ed *EndpointDef) Valid(h *HostDef) error {
 	return nil
 }
 
-func (ed *EndpointDef) Process(namespace string, path string) []*Endpoint {
-	// each endpoint has unique action
+func (ed *EndpointDef) Process(namespace, path string) []*Endpoint {
+	// EndpointDef uses a shorthand and declares multiple actions,
+	// but in aeolus, each endpoint has a unique action
 	endpoints := make([]*Endpoint, len(ed.Actions))
 
 	path = filepath.Join(path, ed.Path)

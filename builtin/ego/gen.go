@@ -11,7 +11,16 @@ import (
 )
 
 func Generate(hostFile, root string) error {
-	h := aeolus.ParseHostFile(hostFile)
+	hd, err := aeolus.ParseHostFile(hostFile)
+	if err != nil {
+		return err
+	}
+
+	if err := hd.Valid(); err != nil {
+		return err
+	}
+
+	h := hd.Process()
 
 	var buf bytes.Buffer
 

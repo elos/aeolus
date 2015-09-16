@@ -2,25 +2,25 @@ package aeolus
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 )
 
-func ParseHostFile(path string) *Host {
+func ParseHostBytes(definition []byte) (*HostDef, error) {
+	hd := &HostDef{}
+
+	if err := json.Unmarshal(definition, hd); err != nil {
+		return nil, fmt.Errorf("error parsing json in host file:", err)
+	}
+
+	return hd, nil
+}
+
+func ParseHostFile(path string) (*HostDef, error) {
 	input, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal("ReadFile error:", err)
+		return nil, fmt.Errorf("error reading host file:", err)
 	}
 
-	hd := HostDef{}
-	err = json.Unmarshal(input, &hd)
-	if err != nil {
-		log.Fatal("Json Unmarshal error", err)
-	}
-
-	if err := hd.Valid(); err != nil {
-		panic(err)
-	}
-
-	return hd.Process()
+	return ParseHostBytes(input)
 }
