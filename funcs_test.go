@@ -63,3 +63,17 @@ func TestReverse(t *testing.T) {
 		t.Errorf("Expected reverse of the empty string to be the empty string")
 	}
 }
+
+func TestNormalizeName(t *testing.T) {
+	cases := map[string]string{
+		"this is my name":    "this_is_my_name",
+		"normal-lize":        "normal_lize",
+		"mis_match ed-stuff": "mis_match_ed_stuff",
+	}
+
+	for example, solution := range cases {
+		if NormalizeName(example) != solution {
+			t.Errorf("Expected NoramlizeName(%s) to be %s, got %s", example, solution, NormalizeName(example))
+		}
+	}
+}
