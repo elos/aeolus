@@ -1,0 +1,94 @@
+{
+    "name": "imperative-todo-mvc",
+    "host": "imperative.todo.mvc",
+    "port": 80,
+
+    "middleware": [
+        "log",
+        "cors"
+    ],
+
+    "services": [
+        "db"
+    ],
+
+    "endpoints": [
+        {
+            "name": "tasks",
+            "path": "/tasks/:task_id",
+            "actions": [ "GET", "POST", "DELETE", "OPTIONS" ],
+            "middleware": {
+                "GET": [ "log", "cors" ],
+                "POST": [ "log", "cors" ],
+                "DELETE": [ "log", "cors" ],
+                "OPTIONS": [ "log", "cors" ]
+            },
+            "services": {
+                "GET": [ "db" ],
+                "POST": [ "db" ],
+                "DELETE": [ "db" ],
+                "OPTIONS": []
+            },
+            "subpoints": [
+                {
+                    "name": "completion",
+                    "path": "/complete",
+                    "actions": [ "POST", "OPTIONS" ],
+                    "middleware": {
+                        "GET": [ "log", "cors" ],
+                        "OPTIONS": [ "log", "cors" ]
+                    },
+                    "services": {
+                        "GET": [ "db" ],
+                        "OPTIONS": []
+                    }
+                }
+            ]
+        },
+        {
+            "name": "lists",
+            "path": "/lists/:list_id",
+            "actions": [ "GET", "POST", "DELETE", "OPTIONS" ],
+            "middleware": {
+                "GET": [ "log", "cors" ],
+                "POST": [ "log", "cors" ],
+                "DELETE": [ "log", "cors" ],
+                "OPTIONS": [ "log", "cors" ]
+            },
+            "services": {
+                "GET": [ "db" ],
+                "POST": [ "db" ],
+                "DELETE": [ "db" ],
+                "OPTIONS": []
+            },
+            "subpoints": [
+                {
+                    "name": "append-task",
+                    "path": "/append-task/:task_id",
+                    "actions": [ "POST", "GET" ],
+                    "middleware": {
+                        "POST": [ "log", "cors" ],
+                        "OPTIONS": [ "log", "cors" ]
+                    },
+                    "services": {
+                        "POST": [ "db" ],
+                        "OPTIONS": []
+                    }
+                },
+                {
+                    "name": "remove-task",
+                    "path": "/remove-task/:task_id",
+                    "actions": [ "POST", "GET" ],
+                    "middleware": {
+                        "POST": [ "log", "cors" ],
+                        "OPTIONS": [ "log", "cors" ]
+                    },
+                    "services": {
+                        "POST": [ "db" ],
+                        "OPTIONS": []
+                    }
+                }
+            ]
+        }
+    ]
+}

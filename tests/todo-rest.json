@@ -1,0 +1,51 @@
+{
+    "name": "rest-todo-mvc",
+    "host": "rest.todo.mvc",
+    "port": 80,
+
+    "middleware": [
+        "log",
+        "cors"
+    ],
+
+    "services": [
+        "db"
+    ],
+
+    "endpoints": [
+        {
+            "name": "tasks",
+            "path": "/tasks",
+            "actions": [ "GET", "POST", "DELETE", "OPTIONS" ],
+            "middleware": {
+                "GET": [ "log", "cors" ],
+                "POST": [ "log", "cors" ],
+                "DELETE": [ "log", "cors" ],
+                "OPTIONS": [ "log", "cors" ]
+            },
+            "services": {
+                "GET": [ "db" ],
+                "POST": [ "db" ],
+                "DELETE": [ "db" ],
+                "OPTIONS": []
+            }
+        },
+        {
+            "name": "lists",
+            "path": "/lists",
+            "actions": [ "GET", "POST", "DELETE", "OPTIONS" ],
+            "middleware": {
+                "GET": [ "log", "cors" ],
+                "POST": [ "log", "cors" ],
+                "DELETE": [ "log", "cors" ],
+                "OPTIONS": [ "log", "cors" ]
+            },
+            "services": {
+                "GET": [ "db" ],
+                "POST": [ "db" ],
+                "DELETE": [ "db" ],
+                "OPTIONS": []
+            }
+        }
+    ]
+}
