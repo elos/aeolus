@@ -231,7 +231,8 @@ func (hd *HostDef) Valid() error {
 }
 
 func (hd *HostDef) Process() *Host {
-	endpoints := make([]*Endpoint, 0)
+	var endpoints []*Endpoint
+
 	routes := make(map[string]string)
 
 	for _, e := range hd.Endpoints {
