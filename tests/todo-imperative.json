@@ -33,7 +33,7 @@
                 {
                     "name": "completion",
                     "path": "/complete",
-                    "actions": [ "POST", "OPTIONS" ],
+                    "actions": [ "GET", "OPTIONS" ],
                     "middleware": {
                         "GET": [ "log", "cors" ],
                         "OPTIONS": [ "log", "cors" ]
@@ -68,11 +68,11 @@
                     "actions": [ "POST", "GET" ],
                     "middleware": {
                         "POST": [ "log", "cors" ],
-                        "OPTIONS": [ "log", "cors" ]
+                        "GET": [ "log", "cors" ]
                     },
                     "services": {
                         "POST": [ "db" ],
-                        "OPTIONS": []
+                        "GET": []
                     }
                 },
                 {
@@ -81,11 +81,11 @@
                     "actions": [ "POST", "GET" ],
                     "middleware": {
                         "POST": [ "log", "cors" ],
-                        "OPTIONS": [ "log", "cors" ]
+                        "GET": [ "log", "cors" ]
                     },
                     "services": {
                         "POST": [ "db" ],
-                        "OPTIONS": []
+                        "GET": []
                     }
                 }
             ]

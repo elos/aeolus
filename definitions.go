@@ -65,14 +65,16 @@ type (
 // EndpointDef: Valid(h *HostDef) error, Process --- {{{
 
 // Valid returns an error if the endpoint definition is invalid, otherwise nil
-// An endpoint can be invalid for 6 reasons:
+// An endpoint can be invalid for 7 reasons:
 //  1. It lacks a name
 //  2. It lacks a path
 //  3. It lacks a path which begins "/"
 //  4. It declares an invalid HTTP action either as supported,
-//     or in as partition in middleware or services
-//  5. It declares unrecognized middleware or services
-//  6. Any of its subpoints are invalid for the aforementioned 5 reasons
+//     or in middleware or services
+//  5. It declares middleware or services for an action it didn't explicitly
+//     declare for the endpoint
+//  6. It declares unrecognized middleware or services (not declared for the host)
+//  7. Any of its subpoints are invalid for the aforementioned 6 reasons
 func (ed *EndpointDef) Valid(h *HostDef) error {
 	// (1): no name
 	if ed.Name == "" {
@@ -89,20 +91,31 @@ func (ed *EndpointDef) Valid(h *HostDef) error {
 		return fmt.Errorf("endpoint definition '%s' must have a path that begins with a '/'", ed.Name)
 	}
 
+	// The actions which have been declared
+	declaredActions := make(map[string]bool)
+
 	// (4): unrecognized action
 	for _, a := range ed.Actions {
 		if _, ok := actionLiterals[a]; !ok {
 			return fmt.Errorf("endpoint definition '%s' has an invalid http action: '%s'", ed.Name, a)
 		}
+
+		// Remember that we have declared this action
+		declaredActions[a] = true
 	}
 
 	for action, wares := range ed.Middleware {
 		// (4): unrecognized action
 		if _, ok := actionLiterals[action]; !ok {
-			return fmt.Errorf("endpoint definition '%s' has middleware definition with an invalid http action: '%s'", ed.Name, action)
+			return fmt.Errorf("endpoint definition '%s' has a middleware definition with an invalid http action: '%s'", ed.Name, action)
 		}
 
-		// (5): unrecognized middleware
+		// (5): undeclared action
+		if _, ok := declaredActions[action]; !ok {
+			return fmt.Errorf("endpoint definition '%s' has a middleware definition with an undeclared http action: '%s'", ed.Name, action)
+		}
+
+		// (6): unrecognized middleware
 		for _, v := range wares {
 			if !includes(h.Middleware, v) {
 				return fmt.Errorf("endpoint definition '%s' declares unrecognized middleware: '%s'", ed.Name, v)
@@ -111,12 +124,18 @@ func (ed *EndpointDef) Valid(h *HostDef) error {
 	}
 
 	for action, services := range ed.Services {
+
 		// (4): unrecognized action
 		if _, ok := actionLiterals[action]; !ok {
-			return fmt.Errorf("endpoint definition '%s' has services definition with an invalid http action: '%s'", ed.Name, action)
+			return fmt.Errorf("endpoint definition '%s' has a services definition with an invalid http action: '%s'", ed.Name, action)
 		}
 
-		// (5): unrecognized service
+		// (5): undeclared action
+		if _, ok := declaredActions[action]; !ok {
+			return fmt.Errorf("endpoint definition '%s' has a services definition with an undeclared http action: '%s'", ed.Name, action)
+		}
+
+		// (6): unrecognized service
 		for _, v := range services {
 			if !includes(h.Services, v) {
 				return fmt.Errorf("endpoint definition '%s' declares uncregonized service: '%s'", ed.Name, v)
@@ -124,7 +143,7 @@ func (ed *EndpointDef) Valid(h *HostDef) error {
 		}
 	}
 
-	// (6): recursively check the validity of each subpoint
+	// (7): recursively check the validity of each subpoint
 	for _, e := range ed.Subpoints {
 		if err := e.Valid(h); err != nil {
 			return err
@@ -184,7 +203,7 @@ func (ed *EndpointDef) Process(namespace, path string) []*Endpoint {
 // HostDef Valid() error, Process --- {{{
 
 // Valid returns an error if the host definition is invalid, otherwise nil
-// A host can be invalid for n reasons:
+// A host can be invalid for 5 reasons:
 //  1. It lacks a name
 //  2. It lacks a host address
 //  3. It lacks a positive port

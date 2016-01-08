@@ -1,6 +1,6 @@
 package aeolus
 
-// Action represents an HTTP Action
+// An Action represents an HTTP Action
 type Action int
 
 // Enumeration of the 4 supported action types
