@@ -33,6 +33,9 @@ func Generate(hostFile, root string) error {
 	routesFile := filepath.Join(root, "routes/routes.go")
 	routesContextFile := filepath.Join(root, "views/routes_context.go")
 
+	templates.EnsureDirectoryExists("routes")
+	templates.EnsureDirectoryExists("views")
+
 	if err := templates.ExecuteAndWriteGoFile(engine, Core, coreFile, h); err != nil {
 		return err
 	}
