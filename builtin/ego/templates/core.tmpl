@@ -1,6 +1,10 @@
 {{define "ROOT"}}
 package {{downcase .Name}}
 
+import (
+    "github.com/elos/{{downcase .Name}}/services"
+)
+
 type Middleware struct{
     {{range $middleware, $_ := .Middleware}}
         {{name $middleware}} serve.Middleware
