@@ -212,7 +212,7 @@ func (ed *EndpointDef) Process(namespace, path string) []*Endpoint {
 func (hd *HostDef) Valid() error {
 	// (1) no name
 	if hd.Name == "" {
-		return fmt.Errorf("host definition lacks  a name")
+		return fmt.Errorf("host definition lacks a name")
 	}
 
 	// (2) no host address
@@ -273,7 +273,7 @@ func (hd *HostDef) Process() *Host {
 	}
 
 	return &Host{
-		Name:       hd.Name,
+		Name:       NormalizeName(hd.Name),
 		Host:       hd.Host,
 		Port:       uint(hd.Port),
 		Middleware: m,
